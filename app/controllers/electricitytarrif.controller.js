@@ -1,5 +1,6 @@
 const ElectricityTarrif = require("../models/electricitytarrif.model.js");
 const FixedCharges = require("../models/fixedcharges.model.js");
+const UnitCharges = require("../models/unitcharges.model.js");
 
 // Create and Save a new Tarrif
 exports.create = (req, res) => {
@@ -34,6 +35,16 @@ exports.create = (req, res) => {
 // Retrieve all tarrifs from the database.
 exports.findAll = (req, res) => {
     let biMonthlyConsumption = [];
+    let unitcharges = [];
+    UnitCharges.getAll((err, data) => {
+      if (err) {
+        res.status(500).send({
+          message:
+            err.message || "Some error occurred while retrieving Tarrif."
+        });
+      }
+      unitcharges = data;
+    });
     FixedCharges.getAll((err, data) => {
     if (err) {
       res.status(500).send({
@@ -42,6 +53,9 @@ exports.findAll = (req, res) => {
       });
     }
     biMonthlyConsumption = data;
+    biMonthlyConsumption.forEach((item, index) => {
+        item.splitRate = unitcharges.filter(unitCharge => unitCharge.maxlimitid === item.id);
+    });
     });
     ElectricityTarrif.getAll((err, data) => {
     if (err)

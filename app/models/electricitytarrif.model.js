@@ -22,21 +22,34 @@ ElectricityTarrif.create = (newTarrif, result) => {
 
     resultData = {id: res.insertId, ...tarrifDetails}
     newTarrif.biMonthlyConsumption.forEach((newFixedCharge, index) => {
-      newFixedCharge.tarrifid = resultData.id;
-      sql.query("INSERT INTO fixed_charges SET ?", newFixedCharge, (err, res) => {
+      
+      const fixedChargeDetails = {maxLimit: newFixedCharge.maxLimit,  fixedCharges: newFixedCharge.fixedCharges}
+      fixedChargeDetails.tarrifid = resultData.id;
+      sql.query("INSERT INTO fixed_charges SET ?", fixedChargeDetails, (err, res) => {
         if (err) {
           console.log("error: ", err);
           result(err, null);
           return;
         }
-    
-        if (index === newTarrif.biMonthlyConsumption.length - 1) {
-          console.log("created tarrif: ", { id: res.insertId, ...newFixedCharge });
-          resultData = {...resultData, biMonthlyConsumption: newTarrif.biMonthlyConsumption}
-          result(null, resultData);
-        }
+        resultData = {id: res.insertId, ...tarrifDetails, ...fixedChargeDetails, tarrifId: res.insertId}
+        newFixedCharge.splitRate.forEach((newUnitCharge, splitRateIndex) => {
+          newUnitCharge.maxlimitid = resultData.tarrifId;
+          sql.query("INSERT INTO unit_charges SET ?", newUnitCharge, (err, res) => {
+            if (err) {
+              console.log("error: ", err);
+              result(err, null);
+              return;
+            }
+            
+            if (index === newTarrif.biMonthlyConsumption.length - 1) {
+              console.log("created tarrif: ", { id: res.insertId, ...newFixedCharge });
+              resultData = {...resultData, biMonthlyConsumption: newTarrif.biMonthlyConsumption}
+              result(null, resultData);
+            }
+        }); 
       });
     });
+  });
   });
 };
 
@@ -50,9 +63,30 @@ ElectricityTarrif.findById = (tarrifId, result) => {
     if (res.length) {
       const tarrif = res[0];
       sql.query(`SELECT * FROM fixed_charges WHERE tarrifid = ${tarrifId}`, (err, res) => {
+
+        if (err) {
+          return(err, null);
+          return;
+        }
+        const maxlimits = res.map(item => item.id);
         tarrif.biMonthlyConsumption = res;
-        result(null, tarrif);
-        return;
+        // const limits = res
+        if (res.length) {
+          maxlimits.forEach((maxLimitId, index) => {
+            sql.query(`SELECT * FROM unit_charges WHERE maxlimitid = ${maxLimitId}`, (err, res) => {
+
+
+              tarrif.biMonthlyConsumption[index].splitRate = res
+              if (index === tarrif.biMonthlyConsumption.length - 1) {
+              result(null, tarrif);
+              return;
+              }
+                });
+          });
+          
+        }
+
+        
       });
     } else {
       result({ kind: "not_found" }, null);
@@ -182,36 +216,70 @@ ElectricityTarrif.updateById = (id, electricityTarrif, result) => {
 };
 
 ElectricityTarrif.remove = (id, result) => {
-  sql.query(
-        "DELETE FROM fixed_charges WHERE tarrifid = ?",
-        id,
+ sql.query(
+  "SELECT * FROM fixed_charges WHERE tarrifid = ?",
+  id,
+  (err, res) => {
+    if (err) {
+      console.log("error: ", err);
+      result(null, err);
+      return;
+    }
+    const limitids = res.map(item => item.id);
+    limitids.forEach((item, index) => {
+      sql.query(
+        "DELETE FROM unit_charges WHERE maxlimitid = ?",
+        item,
         (err, res) => {
           if (err) {
             console.log("error: ", err);
             result(null, err);
             return;
           }
-
-          sql.query("DELETE FROM elecricity_tarrifs WHERE id = ?", id, (err, res) => {
-            if (err) {
-              console.log("error: ", err);
-              result(null, err);
-              return;
-            }
-        
-            if (res.affectedRows == 0) {
-              result({ kind: "not_found" }, null);
-              return;
-            }
-            result(null, res);
-            return;
+          if (index === limitids.length - 1) {
+            sql.query(
+              "DELETE FROM fixed_charges WHERE tarrifid = ?",
+              id,
+              (err, res) => {
+                if (err) {
+                  console.log("error: ", err);
+                  result(null, err);
+                  return;
+                }
+      
+                sql.query("DELETE FROM elecricity_tarrifs WHERE id = ?", id, (err, res) => {
+                  if (err) {
+                    console.log("error: ", err);
+                    result(null, err);
+                    return;
+                  }
+              
+                  if (res.affectedRows == 0) {
+                    result({ kind: "not_found" }, null);
+                    return;
+                  }
+                  result(null, res);
+                  return;
+                });
+              }
+            );
+          }
           });
-        }
-      );
+    });
+  });
 };
 
 ElectricityTarrif.removeAll = result => {
  
+  sql.query(
+    "DELETE FROM unit_charges",
+    (err, res) => {
+      if (err) {
+        console.log("error: ", err);
+        result(null, err);
+        return;
+      }
+
   sql.query(
     "DELETE FROM fixed_charges",
     (err, res) => {
@@ -229,8 +297,8 @@ ElectricityTarrif.removeAll = result => {
         }
         result(null, res);
       });
-    }
-  );
+    });
+  });
 };
 
 module.exports = ElectricityTarrif;

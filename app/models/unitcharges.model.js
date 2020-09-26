@@ -1,14 +1,13 @@
 const sql = require("./db.js");
 
 // constructor
-const FixedCharges = function(fixedCharges) {
-  this.maxLimit = fixedCharges.maxLimit;
-  this.fixedCharges = fixedCharges.fixedCharges;
-  this.splitRate = fixedCharges.splitRate;
+const UnitCharges = function(unitCharges) {
+  this.unit = unitCharges.unit;
+  this.chargePerUnit = unitCharges.chargePerUnit;
 };
 
-FixedCharges.findById = (fixedChargeId, result) => {
-  sql.query(`SELECT * FROM fixed_charges WHERE id = ${fixedChargeId}`, (err, res) => {
+UnitCharges.findById = (unitChargeId, result) => {
+  sql.query(`SELECT * FROM unit_charges WHERE id = ${unitChargeId}`, (err, res) => {
     if (err) {
       console.log("error: ", err);
       result(err, null);
@@ -24,8 +23,8 @@ FixedCharges.findById = (fixedChargeId, result) => {
   });
 };
 
-FixedCharges.getAll = result => {
-  sql.query("SELECT * FROM fixed_charges", (err, res) => {
+UnitCharges.getAll = result => {
+  sql.query("SELECT * FROM unit_charges", (err, res) => {
     if (err) {
       console.log("error: ", err);
       result(null, err);
@@ -35,10 +34,10 @@ FixedCharges.getAll = result => {
   });
 };
 
-FixedCharges.updateById = (id, fixedCharges, result) => {
+UnitCharges.updateById = (id, unitCharges, result) => {
   sql.query(
-    "UPDATE fixed_charges SET maxLimit = ?, fixedCharges = ?, splitRate = ?",
-    [fixedCharges.maxLimit, fixedCharges.fixedCharges, fixedCharges.splitRate],
+    "UPDATE unit_charges SET unit = ?, chargePerUnit = ?",
+    [unitCharges.unit, unitCharges.chargePerUnit],
     (err, res) => {
       if (err) {
         console.log("error: ", err);
@@ -50,13 +49,13 @@ FixedCharges.updateById = (id, fixedCharges, result) => {
         result({ kind: "not_found" }, null);
         return;
       }
-      result(null, { id: id, ...fixedCharges });
+      result(null, { id: id, ...unitCharges });
     }
   );
 };
 
-FixedCharges.remove = (id, result) => {
-  sql.query("DELETE FROM fixed_charges WHERE id = ?", id, (err, res) => {
+UnitCharges.remove = (id, result) => {
+  sql.query("DELETE FROM unit_charges WHERE id = ?", id, (err, res) => {
     if (err) {
       console.log("error: ", err);
       result(null, err);
@@ -71,8 +70,8 @@ FixedCharges.remove = (id, result) => {
   });
 };
 
-FixedCharges.removeAll = result => {
-  sql.query("DELETE FROM fixed_charges", (err, res) => {
+UnitCharges.removeAll = result => {
+  sql.query("DELETE FROM unit_charges", (err, res) => {
     if (err) {
       console.log("error: ", err);
       result(null, err);
@@ -82,4 +81,4 @@ FixedCharges.removeAll = result => {
   });
 };
 
-module.exports = FixedCharges;
+module.exports = UnitCharges;
