@@ -22,7 +22,6 @@ exports.create = (req, res) => {
 
   // Save tarrif in the database
   ElectricityTarrif.create(electricityTarrif, (err, data) => {
-    console.log('INSIDE CREATE')
     if (err)
       res.status(500).send({
         message:
@@ -65,7 +64,6 @@ exports.findAll = (req, res) => {
       });
     else {
       data.biMonthlyConsumption = biMonthlyConsumption;   
-      console.log('DATA OUTSIDE', data);
       res.send(data);
     } 
   });
@@ -97,7 +95,6 @@ exports.update = (req, res) => {
     });
   }
 
-  console.log(req.body);
 
   ElectricityTarrif.updateById(
     req.params.tarrifId,
