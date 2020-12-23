@@ -1,20 +1,20 @@
 module.exports = app => {
     const electricityTarrifs = require("../controllers/electricitytarrif.controller.js");
-  // Create a new Customer
+  // Create a new tarrif
   app.post("/electricitytarrifs", electricityTarrifs.create);
 
-  // Retrieve all Customers
+  // Retrieve all tarrif
   app.get("/electricitytarrifs", electricityTarrifs.findAll);
 
-  // Retrieve a single Customer with customerId
+  // Retrieve a single tarrif with tarrifId
   app.get("/electricitytarrifs/:tarrifId", electricityTarrifs.findOne);
 
-  // Update a Customer with customerId
+  // Update a tarrif with tarrifId
   app.put("/electricitytarrifs/:tarrifId", electricityTarrifs.update);
 
-  // Delete a Customer with customerId
+  // Delete a tarrif with tarrifId
   app.delete("/electricitytarrifs/:tarrifId", electricityTarrifs.delete);
 
-  // Create a new Customer
+  // Delete all tarrifs
   app.delete("/electricitytarrifs", electricityTarrifs.deleteAll);
 };
